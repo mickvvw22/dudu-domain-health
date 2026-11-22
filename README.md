@@ -1,6 +1,6 @@
 # Dudu 公共健康监控
 
-这是一个无 API key、无账号凭据的静态健康展示项目，监控固定站点 `dudu.loc.cc` 与 `panel.dudu.loc.cc`。`scripts/check_health.py` 使用 Python 3 标准库执行：
+这是一个无 API key、无账号凭据的静态健康展示项目，监控固定站点 `dudu.loc.cc`、`panel.dudu.loc.cc` 与 `baidu.vvpp.cc`。`scripts/check_health.py` 使用 Python 3 标准库执行：
 
 - DNS：系统 `getaddrinfo`，分别记录 A / AAAA 与解析器标识；
 - TLS：默认信任库、SNI 与证书校验，记录 UTC 到期时间和剩余天数；
@@ -25,4 +25,4 @@ python3 scripts/check_health.py
 python3 -m http.server 8000
 ```
 
-然后打开 `http://localhost:8000/`。脚本固定只检查上述两个域名，不读取账号、令牌或其他 secret。`latest.json` 是一次真实执行生成的初始记录，并标注执行来源。
+然后打开 `http://localhost:8000/`。脚本固定只检查上述三个域名，不读取账号、令牌或其他 secret。`latest.json` 是一次真实执行生成的初始记录，并标注执行来源。
