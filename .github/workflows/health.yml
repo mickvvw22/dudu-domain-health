@@ -1,5 +1,4 @@
 name: Health check and Pages deploy
-
 on:
   push:
     branches:
@@ -7,16 +6,13 @@ on:
   schedule:
     - cron: '0 */6 * * *'
   workflow_dispatch:
-
 permissions:
   contents: read
   pages: write
   id-token: write
-
 concurrency:
   group: pages
   cancel-in-progress: false
-
 jobs:
   check-and-deploy:
     runs-on: ubuntu-latest
@@ -32,6 +28,13 @@ jobs:
         env:
           GITHUB_ACTIONS: 'true'
         run: python3 scripts/check_health.py
+      - name: Upload public monitor JSON
+        uses: actions/upload-artifact@v4
+        with:
+          name: public-monitor-json
+          path: latest.json
+          if-no-files-found: error
+          retention-days: 1
       - name: Upload site artifact
         uses: actions/upload-pages-artifact@v3
         with:
@@ -39,3 +42,46 @@ jobs:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
+
+  publish-public-data:
+    if: github.ref == 'refs/heads/main'
+    needs: check-and-deploy
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout trusted main
+        uses: actions/checkout@v4
+      - name: Download generated monitor JSON
+        uses: actions/download-artifact@v4
+        with:
+          name: public-monitor-json
+          path: ${{ runner.temp }}/public-monitor-json
+      - name: Validate and publish only the monitor JSON
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - "$RUNNER_TEMP/public-monitor-json/latest.json" <<'PY'
+          import json, sys
+          from datetime import datetime, timezone
+          with open(sys.argv[1], encoding='utf-8') as f:
+              data = json.load(f)
+          assert data.get('schema_version') == 1
+          assert data.get('source') == 'GitHub Actions / scripts/check_health.py'
+          checked = datetime.fromisoformat(data['checked_at'].replace('Z', '+00:00'))
+          assert abs((datetime.now(timezone.utc) - checked).total_seconds()) < 3600
+          assert {x.get('host') for x in data['sites']} >= {'dudu.loc.cc', 'panel.dudu.loc.cc', 'baidu.vvpp.cc'}
+          PY
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          if git ls-remote --exit-code --heads origin refs/heads/public-monitor-data > /dev/null; then
+            git fetch origin refs/heads/public-monitor-data:refs/remotes/origin/public-monitor-data
+            git switch -c public-monitor-data refs/remotes/origin/public-monitor-data
+          else
+            git switch --orphan public-monitor-data
+          fi
+          cp "$RUNNER_TEMP/public-monitor-json/latest.json" latest.json
+          git add latest.json
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m 'Update public monitor data'
+          git push origin HEAD:refs/heads/public-monitor-data
