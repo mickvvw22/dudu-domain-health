@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="dudu.loc.cc 公共健康状态展示">
+  <title>Dudu 健康监控</title>
+  <style>
+    :root { color-scheme: light; --ink:#172033; --muted:#667085; --line:#e6eaf0; --bg:#f5f7fb; --card:#fff; --ok:#087443; --bad:#b42318; --unknown:#667085; --accent:#3056d3; }
+    * { box-sizing:border-box; } body { margin:0; background:var(--bg); color:var(--ink); font:15px/1.6 system-ui,-apple-system,"Segoe UI","PingFang SC",sans-serif; }
+    main { max-width:900px; margin:auto; padding:24px 16px 48px; } header { display:flex; gap:16px; align-items:flex-start; justify-content:space-between; margin-bottom:20px; } h1 { font-size:clamp(24px,7vw,36px); line-height:1.2; margin:0 0 8px; } h2 { font-size:20px; margin:0; } p { margin:5px 0; } .sub,.meta,.note { color:var(--muted); font-size:13px; }
+    button { border:1px solid #c9d3f2; background:#fff; color:var(--accent); border-radius:10px; padding:9px 12px; font:inherit; cursor:pointer; white-space:nowrap; } button:active { transform:translateY(1px); }
+    .banner { background:#eef2ff; border:1px solid #d9e0ff; border-radius:14px; padding:12px 14px; margin-bottom:18px; } .card { background:var(--card); border:1px solid var(--line); border-radius:16px; padding:18px; margin:14px 0; box-shadow:0 2px 10px #17203308; } .card-head { display:flex; justify-content:space-between; gap:12px; align-items:center; margin-bottom:12px; }
+    .pill { border-radius:999px; padding:3px 9px; font-size:12px; font-weight:650; background:#eef0f3; color:var(--unknown); } .pill.ok { background:#e7f6ee; color:var(--ok); } .pill.fail { background:#fff0ef; color:var(--bad); } .checks { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; } .check { border:1px solid var(--line); border-radius:12px; padding:11px; min-width:0; } .check-title { display:flex; align-items:center; justify-content:space-between; font-weight:650; } .detail { margin-top:5px; color:var(--muted); font-size:12px; overflow-wrap:anywhere; } .error { color:var(--bad); } footer { margin-top:24px; border-top:1px solid var(--line); padding-top:14px; }
+    @media (max-width:560px) { main { padding:20px 12px 40px; } header { display:block; } header button { margin-top:12px; } .checks { grid-template-columns:1fr; } .card { padding:14px; } }
+  </style>
+</head>
+<body>
+<main>
+  <header><div><h1>Dudu 健康监控</h1><p class="sub">公开静态展示 · 结果来自定时检查</p></div><button id="refresh" type="button">刷新数据</button></header>
+  <section class="banner"><strong>说明</strong><p>“刷新数据”只重新读取最新 JSON，并不启动新检测。检测由 GitHub Actions 每 6 小时运行一次；结果可能有延迟，不能保证 Yunamo 或任何第三方服务保活。</p><p class="meta" id="meta">正在读取 latest.json…</p></section>
+  <section id="sites" aria-live="polite"><p class="sub">正在加载…</p></section>
+  <footer class="note">数据来源：本项目的 <code>scripts/check_health.py</code>（无 API key）。DNS 使用系统 getaddrinfo；TLS 使用证书验证与 SNI；HTTP/HTTPS 分开检测，未测量或无记录显示为未知。</footer>
+</main>
+<script>
+  const sites = document.getElementById('sites');
+  const meta = document.getElementById('meta');
+  const esc = value => String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const statusText = value => value === 'ok' ? '正常' : value === 'fail' ? '失败' : '未知/未测量';
+  const pill = value => `<span class="pill ${value === 'ok' ? 'ok' : value === 'fail' ? 'fail' : ''}">${statusText(value)}</span>`;
+  const detail = item => {
+    if (!item || item.status === undefined) return '<span class="detail">无记录：未知，未测量</span>';
+    const bits = [];
+    if (item.resolver) bits.push(`解析器：${esc(item.resolver)}`);
+    if (item.A?.length || item.AAAA?.length) bits.push(`A ${esc((item.A||[]).join(', '))}；AAAA ${esc((item.AAAA||[]).join(', '))}`);
+    if (item.status_code !== undefined && item.status_code !== null) bits.push(`状态码：${esc(item.status_code)}`);
+    if (item.expires_at) bits.push(`到期：${esc(item.expires_at)}（${esc(item.days_until_expiry)} 天）`);
+    if (item.final_url) bits.push(`最终地址：${esc(item.final_url)}`);
+    if (item.error) bits.push(`<span class="error">错误：${esc(item.error)}</span>`);
+    return `<span class="detail">${bits.length ? bits.join('<br>') : '未提供详情'}</span>`;
+  };
+  const check = (title, item) => `<div class="check"><div class="check-title"><span>${title}</span>${pill(item?.status)}</div>${detail(item)}</div>`;
+  function render(data) {
+    if (!data || !Array.isArray(data.sites)) { meta.textContent = 'latest.json 无有效记录；当前状态未知。'; sites.innerHTML = '<div class="card"><p>暂无可用检测记录。</p></div>'; return; }
+    meta.textContent = `最近检查：${data.checked_at || '未知'} · 来源：${data.source || '未知'} · 超时：${data.timeout_seconds ?? '未知'} 秒`;
+    sites.innerHTML = data.sites.map(site => `<article class="card"><div class="card-head"><h2>${esc(site.host || '未知站点')}</h2><span class="pill">分项结果</span></div><div class="checks">${check('DNS A / AAAA', site.dns)}${check('TLS 证书', site.tls)}${check('HTTP', site.http)}${check('HTTPS', site.https)}</div></article>`).join('');
+  }
+  async function load() { meta.textContent = '正在读取 latest.json…'; try { const response = await fetch(`latest.json?ts=${Date.now()}`, {cache:'no-store'}); if (!response.ok) throw new Error(`HTTP ${response.status}`); render(await response.json()); } catch (error) { meta.textContent = `读取失败：${error.message}。当前状态未知。`; sites.innerHTML = '<div class="card"><p class="error">无法加载最新记录，未伪装为正常。</p></div>'; } }
+  document.getElementById('refresh').addEventListener('click', load); load();
+</script>
+</body>
+</html>
