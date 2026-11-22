@@ -62,7 +62,7 @@ jobs:
         run: |
           set -euo pipefail
           python3 - "$RUNNER_TEMP/public-monitor-json/latest.json" <<'PY'
-          import json, sys
+          import ipaddress, json, sys
           from datetime import datetime, timezone
           with open(sys.argv[1], encoding='utf-8') as f:
               data = json.load(f)
@@ -70,7 +70,36 @@ jobs:
           assert data.get('source') == 'GitHub Actions / scripts/check_health.py'
           checked = datetime.fromisoformat(data['checked_at'].replace('Z', '+00:00'))
           assert abs((datetime.now(timezone.utc) - checked).total_seconds()) < 3600
-          assert {x.get('host') for x in data['sites']} >= {'dudu.loc.cc', 'panel.dudu.loc.cc', 'baidu.vvpp.cc'}
+          allowed = ('dudu.loc.cc', 'baidu.vvpp.cc')
+          chosen = [x for x in data['sites'] if x.get('host') in allowed]
+          assert len(chosen) == 2 and {x['host'] for x in chosen} == set(allowed)
+          clean = []
+          for site in chosen:
+              item = {'host': site['host']}
+              for kind in ('dns', 'tls', 'http', 'https'):
+                  check = site[kind]
+                  assert check['status'] in ('ok', 'fail', 'unknown')
+                  item[kind] = {'status': check['status']}
+              for family, version in (('A', 4), ('AAAA', 6)):
+                  addresses = site['dns'].get(family, [])
+                  assert len(addresses) <= 100
+                  parsed = [ipaddress.ip_address(a) for a in addresses]
+                  assert all(a.version == version for a in parsed)
+                  item['dns'][family] = [str(a) for a in parsed]
+              expiry = site['tls'].get('expires_at')
+              if expiry is not None:
+                  datetime.fromisoformat(expiry.replace('Z', '+00:00'))
+                  item['tls']['expires_at'] = expiry
+              for kind in ('http', 'https'):
+                  code = site[kind].get('status_code')
+                  if type(code) is int and 100 <= code <= 599:
+                      item[kind]['status_code'] = code
+              clean.append(item)
+          public = {'schema_version': 1, 'checked_at': checked.isoformat().replace('+00:00', 'Z'),
+                    'source': 'GitHub Actions / scripts/check_health.py', 'sites': clean}
+          with open(sys.argv[1], 'w', encoding='utf-8') as f:
+              json.dump(public, f, indent=2, ensure_ascii=False)
+              f.write('\n')
           PY
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
