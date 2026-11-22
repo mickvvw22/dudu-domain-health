@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Check the fixed public endpoints and write latest.json.
 
-Only the two constants in TARGETS are checked. No credentials or API keys are used.
+Only the constants in TARGETS are checked. No credentials or API keys are used.
 """
 from __future__ import annotations
 
@@ -15,7 +15,7 @@ import urllib.error
 import urllib.request
 from typing import Any
 
-TARGETS = ("dudu.loc.cc", "panel.dudu.loc.cc")
+TARGETS = ("dudu.loc.cc", "panel.dudu.loc.cc", "baidu.vvpp.cc")
 TIMEOUT = 10
 MAX_REDIRECTS = 3
 OUTPUT = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "latest.json")
