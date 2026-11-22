@@ -1,0 +1,128 @@
+{
+  "schema_version": 1,
+  "checked_at": "2026-11-22T15:46:09Z",
+  "source": "GitHub Actions / scripts/check_health.py",
+  "timeout_seconds": 10,
+  "max_redirects": 3,
+  "sites": [
+    {
+      "host": "dudu.loc.cc",
+      "dns": {
+        "status": "ok",
+        "resolver": "system getaddrinfo",
+        "A": [
+          "185.199.108.153",
+          "185.199.109.153",
+          "185.199.110.153",
+          "185.199.111.153"
+        ],
+        "AAAA": [],
+        "error": null
+      },
+      "tls": {
+        "status": "fail",
+        "verified": false,
+        "expires_at": null,
+        "days_until_expiry": null,
+        "error": "SSLCertVerificationError: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: Hostname mismatch, certificate is not valid for 'dudu.loc.cc'. (_ssl.c:1081)"
+      },
+      "http": {
+        "status": "ok",
+        "reachable": true,
+        "status_code": 200,
+        "final_url": "http://dudu.loc.cc/",
+        "redirects": 0,
+        "error": null
+      },
+      "https": {
+        "status": "fail",
+        "reachable": false,
+        "status_code": null,
+        "final_url": null,
+        "redirects": 0,
+        "error": "URLError: <urlopen error [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: Hostname mismatch, certificate is not valid for 'dudu.loc.cc'. (_ssl.c:1081)>"
+      }
+    },
+    {
+      "host": "panel.dudu.loc.cc",
+      "dns": {
+        "status": "ok",
+        "resolver": "system getaddrinfo",
+        "A": [
+          "172.66.45.8",
+          "172.66.46.248"
+        ],
+        "AAAA": [
+          "2606:4700:310c::ac42:2d08",
+          "2606:4700:310c::ac42:2ef8"
+        ],
+        "error": null
+      },
+      "tls": {
+        "status": "ok",
+        "verified": true,
+        "subject": "((('commonName', 'panel.dudu.loc.cc'),),)",
+        "issuer": "((('countryName', 'US'),), (('organizationName', 'Google Trust Services'),), (('commonName', 'WE1'),))",
+        "expires_at": "2027-02-20T13:11:15Z",
+        "days_until_expiry": 89.89,
+        "error": null
+      },
+      "http": {
+        "status": "ok",
+        "reachable": true,
+        "status_code": 200,
+        "final_url": "https://panel.dudu.loc.cc/",
+        "redirects": 1,
+        "error": null
+      },
+      "https": {
+        "status": "ok",
+        "reachable": true,
+        "status_code": 200,
+        "final_url": "https://panel.dudu.loc.cc/",
+        "redirects": 0,
+        "error": null
+      }
+    },
+    {
+      "host": "baidu.vvpp.cc",
+      "dns": {
+        "status": "ok",
+        "resolver": "system getaddrinfo",
+        "A": [
+          "185.199.108.153",
+          "185.199.109.153",
+          "185.199.110.153",
+          "185.199.111.153"
+        ],
+        "AAAA": [],
+        "error": null
+      },
+      "tls": {
+        "status": "ok",
+        "verified": true,
+        "subject": "((('commonName', 'baidu.vvpp.cc'),),)",
+        "issuer": "((('countryName', 'US'),), (('organizationName', \"Let's Encrypt\"),), (('commonName', 'YR2'),))",
+        "expires_at": "2027-02-20T14:37:13Z",
+        "days_until_expiry": 89.95,
+        "error": null
+      },
+      "http": {
+        "status": "ok",
+        "reachable": true,
+        "status_code": 200,
+        "final_url": "https://baidu.vvpp.cc/",
+        "redirects": 1,
+        "error": null
+      },
+      "https": {
+        "status": "ok",
+        "reachable": true,
+        "status_code": 200,
+        "final_url": "https://baidu.vvpp.cc/",
+        "redirects": 0,
+        "error": null
+      }
+    }
+  ]
+}
