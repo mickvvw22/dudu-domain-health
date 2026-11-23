@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "checked_at": "2026-11-22T23:24:13Z",
+  "checked_at": "2026-11-23T06:31:55Z",
   "source": "GitHub Actions / scripts/check_health.py",
   "sites": [
     {
@@ -19,8 +19,8 @@
         "status": "fail"
       },
       "http": {
-        "status": "fail",
-        "status_code": 404
+        "status": "ok",
+        "status_code": 200
       },
       "https": {
         "status": "fail"
