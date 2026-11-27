@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "checked_at": "2026-11-26T07:28:33Z",
+  "checked_at": "2026-11-27T07:25:24Z",
   "source": "GitHub Actions / scripts/check_health.py",
   "sites": [
     {
